@@ -10,48 +10,51 @@ import Animation exposing
     )
 
 type alias Model =
-    { x : Float
-    , animation : Maybe Animation
-    }
+    Maybe
+        { x : Float
+        , animation : Animation
+        }
 
 type Msg = Tick Time
 
 main = App.program
-    { init = (initialModel, Cmd.none)
+    { init = (Nothing, Cmd.none)
     , update = update
     , view = view
     , subscriptions = subscriptions
     }
 
-initialModel : Model
-initialModel =
-    { x = 0
-    , animation = Nothing
-    }
-
 update : Msg -> Model -> (Model, Cmd Msg)
 update (Tick time) model =
-    case model.animation of
+    case model of
         Nothing ->
             let
                 anim =
                     animation time |> from 100 |> to 300 |> duration (2 * second)
             in
-                (Model time (Just anim), Cmd.none)
-        Just anim ->
-            (Model (animate time anim) (Just anim), Cmd.none)
+                (Just {x = animate time anim, animation = anim}, Cmd.none)
+        Just struct ->
+            (Just
+                { x = animate time struct.animation
+                , animation = struct.animation
+                }
+            , Cmd.none
+            )
 
 view : Model -> Svg Msg
 view model =
-    let
-        x = toString model.x
-    in
-        svg
-        [ width "500px"
-        , viewBox "0 0 500 500"
-        ]
-        [ circle [ cx x, cy "200", r "20", fill "#aa0000" ] []
-        ]
+    case model of
+        Nothing -> svg [] []
+        Just struct ->
+            let
+                x = toString struct.x
+            in
+                svg
+                [ width "500px"
+                , viewBox "0 0 500 500"
+                ]
+                [ circle [ cx x, cy "200", r "20", fill "#aa0000" ] []
+                ]
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
