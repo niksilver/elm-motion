@@ -44,12 +44,14 @@ update (Tick time) model =
 update' : Time -> Model -> Model
 update' time model =
     let
+        updateVal c newX = { c | x = newX }
         ani' =
             case model.motion of
                 Cued fn -> fn time
                 Running ani -> ani
+        newVal = animate time ani'
         c = model.c
-        c' = { c | x = animate time ani' }
+        c' = updateVal c newVal
     in
         { c = c', motion = Running ani' }
 
