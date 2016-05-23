@@ -39,6 +39,10 @@ initialModel =
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update (Tick time) model =
+    (update' time model, Cmd.none)
+
+update' : Time -> Model -> Model
+update' time model =
     let
         ani' =
             case model.motion of
@@ -46,9 +50,8 @@ update (Tick time) model =
                 Running ani -> ani
         c = model.c
         c' = { c | x = animate time ani' }
-        model' = { c = c', motion = Running ani' }
     in
-        (model', Cmd.none)
+        { c = c', motion = Running ani' }
 
 isRunning : Motion -> Bool
 isRunning motion =
