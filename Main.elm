@@ -4,15 +4,22 @@ import Html.App as App
 import Svg exposing (Svg, svg, circle)
 import Svg.Attributes exposing (width, viewBox, cx, cy, r, fill)
 
-import Animator exposing
-    ( Animator, animator, animate
-    , start, isStartSet
+import Animation exposing
+    ( Animation, animation, animate
     , from, to, duration
     )
 
-type alias Model =
+type alias Circle =
     { x : Float
-    , animator : Animator
+    }
+
+type Motion
+    = Cued (Time -> Animation)
+    | Running Animation
+
+type alias Model =
+    { c : Circle
+    , motion : Motion
     }
 
 type Msg = Tick Time
@@ -26,30 +33,36 @@ main = App.program
 
 initialModel : Model
 initialModel =
-    { x = 0
-    , animator = animator |> from 100 |> to 300 |> duration (2 * second)
+    { c = { x = 300 }
+    , motion = Cued (\t -> animation t |> from 100 |> to 300 |> duration (2 * second))
     }
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update (Tick time) model =
     let
-        model' =
-            if (not <| isStartSet model.animator) then
-                { model | animator = start time model.animator }
-            else
-                model
+        ani' =
+            case model.motion of
+                Cued fn -> fn time
+                Running ani -> ani
+        c = model.c
+        c' = { c | x = animate time ani' }
+        model' = { c = c', motion = Running ani' }
     in
-        ({ model' | x = animate time model.animator }
-        , Cmd.none
-        )
+        (model', Cmd.none)
+
+isRunning : Motion -> Bool
+isRunning motion =
+    case motion of
+        Running _ -> True
+        Cued _ -> False
 
 view : Model -> Svg Msg
 view model =
-    if (not <| isStartSet model.animator) then
+    if (not <| isRunning model.motion) then
         svg [] []
     else
         let
-            x = toString model.x
+            x = toString model.c.x
         in
             svg
             [ width "500px"
@@ -61,3 +74,4 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Time.every (30 * millisecond) Tick
+
