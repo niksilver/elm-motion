@@ -28,7 +28,6 @@ initialModel : Model Circle
 initialModel =
     Model
         { x = 300 }
-        -- (Cued (\t -> animation t |> from 100 |> to 300 |> duration (2 * second)))
         (cue (\a -> a |> from 100 |> to 300 |> duration (2 * second)))
 
 update : Msg -> Model Circle -> (Model Circle, Cmd Msg)
