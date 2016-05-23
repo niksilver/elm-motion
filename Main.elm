@@ -42,18 +42,27 @@ update (Tick time) model =
     (update' time model, Cmd.none)
 
 update' : Time -> Model -> Model
-update' time model =
+update' =
+    makeUpdate (\newX c -> { c | x = newX })
+
+makeUpdate : (Float -> Circle -> Circle) -> Time -> Model -> Model
+makeUpdate updateVal =
     let
-        updateVal c newX = { c | x = newX }
-        ani' =
-            case model.motion of
-                Cued fn -> fn time
-                Running ani -> ani
-        newVal = animate time ani'
-        c = model.c
-        c' = updateVal c newVal
+        update' : Time -> Model -> Model
+        update' time model =
+            let
+                updateVal newX c = { c | x = newX }
+                ani' =
+                    case model.motion of
+                        Cued fn -> fn time
+                        Running ani -> ani
+                newVal = animate time ani'
+                c = model.c
+                c' = updateVal newVal c
+            in
+                { c = c', motion = Running ani' }
     in
-        { c = c', motion = Running ani' }
+        update'
 
 isRunning : Motion -> Bool
 isRunning motion =
