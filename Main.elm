@@ -1,3 +1,5 @@
+import Motion exposing (Motion, Model, makeUpdate, cue, isRunning)
+
 import Time exposing (Time, millisecond, second)
 
 import Html.App as App
@@ -5,21 +7,12 @@ import Svg exposing (Svg, svg, circle)
 import Svg.Attributes exposing (width, viewBox, cx, cy, r, fill)
 
 import Animation exposing
-    ( Animation, animation, animate
-    , from, to, duration
+    ( from, to, duration
     )
+
 
 type alias Circle =
     { x : Float
-    }
-
-type Motion
-    = Cued (Time -> Animation)
-    | Running Animation
-
-type alias Model c =
-    { circ : c
-    , motion : Motion
     }
 
 type Msg = Tick Time
@@ -35,7 +28,8 @@ initialModel : Model Circle
 initialModel =
     Model
         { x = 300 }
-        (Cued (\t -> animation t |> from 100 |> to 300 |> duration (2 * second)))
+        -- (Cued (\t -> animation t |> from 100 |> to 300 |> duration (2 * second)))
+        (cue (\a -> a |> from 100 |> to 300 |> duration (2 * second)))
 
 update : Msg -> Model Circle -> (Model Circle, Cmd Msg)
 update (Tick time) model =
@@ -44,35 +38,6 @@ update (Tick time) model =
 update' : Time -> Model Circle -> Model Circle
 update' =
     makeUpdate (\newX circ -> { circ | x = newX })
-
-makeUpdate : (Float -> c -> c) -> Time -> Model c -> Model c
-makeUpdate updateVal time model =
-    let
-        -- update' is a function that really takes two arguments,
-        -- but we omit them here because they're recorded for
-        -- type-checking purposes in the higher-level signature
-        --
-        -- update' : Time -> Model c -> Model c
-
-        update' =
-            let
-                ani' =
-                    case model.motion of
-                        Cued fn -> fn time
-                        Running ani -> ani
-                newVal = animate time ani'
-                oldC = model.circ
-                newC = updateVal newVal oldC
-            in
-                { circ = newC, motion = Running ani' }
-    in
-        update'
-
-isRunning : Motion -> Bool
-isRunning motion =
-    case motion of
-        Running _ -> True
-        Cued _ -> False
 
 view : Model Circle -> Svg Msg
 view model =
