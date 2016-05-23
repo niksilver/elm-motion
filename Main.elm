@@ -17,8 +17,8 @@ type Motion
     = Cued (Time -> Animation)
     | Running Animation
 
-type alias Model =
-    { c : Circle
+type alias Model c =
+    { circ : c
     , motion : Motion
     }
 
@@ -31,36 +31,40 @@ main = App.program
     , subscriptions = subscriptions
     }
 
-initialModel : Model
+initialModel : Model Circle
 initialModel =
-    { c = { x = 300 }
-    , motion = Cued (\t -> animation t |> from 100 |> to 300 |> duration (2 * second))
-    }
+    Model
+        { x = 300 }
+        (Cued (\t -> animation t |> from 100 |> to 300 |> duration (2 * second)))
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model Circle -> (Model Circle, Cmd Msg)
 update (Tick time) model =
     (update' time model, Cmd.none)
 
-update' : Time -> Model -> Model
+update' : Time -> Model Circle -> Model Circle
 update' =
-    makeUpdate (\newX c -> { c | x = newX })
+    makeUpdate (\newX circ -> { circ | x = newX })
 
-makeUpdate : (Float -> Circle -> Circle) -> Time -> Model -> Model
-makeUpdate updateVal =
+makeUpdate : (Float -> c -> c) -> Time -> Model c -> Model c
+makeUpdate updateVal time model =
     let
-        update' : Time -> Model -> Model
-        update' time model =
+        -- update' is a function that really takes two arguments,
+        -- but we omit them here because they're recorded for
+        -- type-checking purposes in the higher-level signature
+        --
+        -- update' : Time -> Model c -> Model c
+
+        update' =
             let
-                updateVal newX c = { c | x = newX }
                 ani' =
                     case model.motion of
                         Cued fn -> fn time
                         Running ani -> ani
                 newVal = animate time ani'
-                c = model.c
-                c' = updateVal newVal c
+                oldC = model.circ
+                newC = updateVal newVal oldC
             in
-                { c = c', motion = Running ani' }
+                { circ = newC, motion = Running ani' }
     in
         update'
 
@@ -70,13 +74,13 @@ isRunning motion =
         Running _ -> True
         Cued _ -> False
 
-view : Model -> Svg Msg
+view : Model Circle -> Svg Msg
 view model =
     if (not <| isRunning model.motion) then
         svg [] []
     else
         let
-            x = toString model.c.x
+            x = toString model.circ.x
         in
             svg
             [ width "500px"
@@ -85,7 +89,7 @@ view model =
             [ circle [ cx x, cy "200", r "20", fill "#aa0000" ] []
             ]
 
-subscriptions : Model -> Sub Msg
+subscriptions : Model c -> Sub Msg
 subscriptions model =
     Time.every (30 * millisecond) Tick
 
