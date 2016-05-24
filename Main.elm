@@ -28,7 +28,7 @@ initialModel : Model Circle
 initialModel =
     Model
         { x = 300 }
-        (cue (\a -> a |> from 100 |> to 300 |> duration (2 * second)))
+        (from 100 >> to 300 >> duration (2 * second) |> cue)
 
 update : Msg -> Model Circle -> (Model Circle, Cmd Msg)
 update (Tick time) model =
